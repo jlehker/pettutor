@@ -1,15 +1,13 @@
-# https://tutorialedge.net/python/concurrency/asyncio-event-loops-tutorial/
 import os, sys
 import asyncio
 import platform
 from datetime import datetime
 from typing import Callable, Any
-import uuid
 
 from aioconsole import ainput
 from bleak import BleakClient, discover
 
-PETTUTOR_UUID = uuid.UUID("B0E6A4BF-CCCC-FFFF-330C-0000000000F0")
+PETTUTOR_UUID = "B0E6A4BF-CCCC-FFFF-330C-0000000000F0"
 FEED_CHARACTERISTIC = "B0E6A4BF-CCCC-FFFF-330C-0000000000F1"
 
 selected_device = []
@@ -112,9 +110,6 @@ async def main():
         await asyncio.sleep(5)
 
 
-#############
-# App Main
-#############
 if __name__ == "__main__":
 
     # Create the event loop.
