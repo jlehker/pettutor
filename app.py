@@ -4,6 +4,7 @@ import platform
 from datetime import datetime
 from typing import Callable, Any
 
+from fastapi import FastAPI
 from aioconsole import ainput
 from bleak import BleakClient, discover
 
@@ -93,10 +94,10 @@ class Connection:
 #############
 # Loops
 #############
-async def user_console_manager(connection: Connection):
+async def user_console_manager(connection: Connection, queue):
     while True:
         if connection.client and connection.connected:
-            input_str = await ainput("Press any key to feed ...")
+            val = await queue.get()
             bytes_to_send = bytearray(0)
             await connection.client.write_gatt_char(FEED_CHARACTERISTIC, bytes_to_send)
             print(f"Sent feed instruction.")
@@ -104,26 +105,37 @@ async def user_console_manager(connection: Connection):
             await asyncio.sleep(2.0, loop=loop)
 
 
-async def main():
+async def main(connection, queue):
     while True:
-        # YOUR APP CODE WOULD GO HERE.
-        await asyncio.sleep(5)
+        if connection.client and connection.connected:
+            queue.put_nowait(0)
+            await asyncio.sleep(5)
+        else:
+            await asyncio.sleep(2.0, loop=loop)
 
 
-if __name__ == "__main__":
+app = FastAPI()
+loop = asyncio.get_event_loop()
+queue = asyncio.Queue()
+connection = None
 
-    # Create the event loop.
-    loop = asyncio.get_event_loop()
 
+@app.on_event("startup")
+async def startup_event():
     connection = Connection(loop, FEED_CHARACTERISTIC)
-    try:
-        asyncio.ensure_future(connection.manager())
-        asyncio.ensure_future(user_console_manager(connection))
-        asyncio.ensure_future(main())
-        loop.run_forever()
-    except KeyboardInterrupt:
-        print()
-        print("User stopped program.")
-    finally:
-        print("Disconnecting...")
-        loop.run_until_complete(connection.cleanup())
+    asyncio.ensure_future(connection.manager())
+    asyncio.ensure_future(user_console_manager(connection, queue))
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("Disconnecting...")
+    loop.run_until_complete(connection.cleanup())
+
+
+@app.get("/feed")
+async def feed():
+    if queue is not None:
+        print("here")
+        queue.put_nowait(0)
+    return 0
