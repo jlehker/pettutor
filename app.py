@@ -70,25 +70,26 @@ class Connection:
 
     async def select_device(self):
         response = -1
+        pettutor_device = None
         print("Bluetooh LE hardware warming up...")
-        while True:
+        while pettutor_device is None:
             await asyncio.sleep(2.0, loop=loop)  # Wait for BLE to initialize.
             devices = await discover()
 
-            print("Searching for PetTutor...")
-            for i, device in enumerate(devices):
+            print("\nSearching for PetTutor...")
+            for device in devices:
                 if device.name == "PTFeeder":
-                    print(f"Found PetTutor.\n{i}: {vars(device)}")
-                    response = i
-
-            if response > -1 and response < len(devices):
-                break
+                    print(f"Found PetTutor: '{device}'\n")
+                    pettutor_device = device
+                    break
             else:
-                print("Couldn't find PetTutor")
+                print("Couldn't find PetTutor. Waiting...")
+                continue
+            break
 
-        print(f"Connecting to {devices[response].name}")
-        self.connected_device = devices[response]
-        self.client = BleakClient(devices[response].address, loop=self.loop)
+        print(f"Connecting to {pettutor_device.name}")
+        self.connected_device = pettutor_device
+        self.client = BleakClient(pettutor_device.address, loop=self.loop)
 
 
 #############
