@@ -1,0 +1,1 @@
+api: python3.7 uvicorn --host 0.0.0.0 main:app
