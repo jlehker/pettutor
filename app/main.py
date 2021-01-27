@@ -1,9 +1,13 @@
 import asyncio
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from .ble import Connection
 from .constants import FEED_CHARACTERISTIC
+
+templates = Jinja2Templates(directory="web/dist")
 
 app = FastAPI(
     title="PiTutor",
@@ -14,6 +18,7 @@ app = FastAPI(
 loop = asyncio.get_event_loop()
 queue = asyncio.Queue()
 connection = None
+
 
 async def feed_queue_manager(connection: Connection, queue: asyncio.Queue):
     while True:
@@ -43,3 +48,11 @@ async def feed():
     if queue is not None:
         queue.put_nowait(0)
     return "done."
+
+
+@app.get("/")
+async def serve_home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+app.mount("/", StaticFiles(directory="web/dist"), name="web")
