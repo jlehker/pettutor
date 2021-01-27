@@ -1,4 +1,6 @@
 bleak
+jinja2
+nodeenv
 fastapi
 uvicorn[standard]
 aiofiles
