@@ -5,18 +5,21 @@ from fastapi import FastAPI
 from .ble import Connection
 from .constants import FEED_CHARACTERISTIC
 
+app = FastAPI(
+    title="PiTutor",
+    description="PetTutor API",
+    version="0.1.0",
+)
 
-app = FastAPI()
 loop = asyncio.get_event_loop()
 queue = asyncio.Queue()
 connection = None
 
-async def user_console_manager(connection: Connection, queue: asyncio.Queue):
+async def feed_queue_manager(connection: Connection, queue: asyncio.Queue):
     while True:
         if connection.client and connection.connected:
             await queue.get()
-            bytes_to_send = bytearray(0)
-            await connection.client.write_gatt_char(FEED_CHARACTERISTIC, bytes_to_send)
+            await connection.client.write_gatt_char(FEED_CHARACTERISTIC, bytearray(0))
             print(f"Sent feed instruction.")
         else:
             await asyncio.sleep(2.0, loop=loop)
@@ -26,7 +29,7 @@ async def user_console_manager(connection: Connection, queue: asyncio.Queue):
 async def startup_event():
     connection = Connection(loop, FEED_CHARACTERISTIC)
     asyncio.ensure_future(connection.manager())
-    asyncio.ensure_future(user_console_manager(connection, queue))
+    asyncio.ensure_future(feed_queue_manager(connection, queue))
 
 
 @app.on_event("shutdown")
